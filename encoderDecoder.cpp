@@ -1,122 +1,134 @@
-#include<iostream>
-#include<map>
-#include<vector>
-#include<fstream>
-#include<cctype>
-#include<cstdlib>
-std::vector<std::string> Mode_slicer(std::string);
+//Encoder_Decoder programm that takes a string and puts every 8 characters
+//on the vertexes of cubes(more then one if more then 8 chars in string)
+//programm allows either to input the string you to encode
+//or input already encoded string and key for decoding
 
-class Cube{
-    private:    
-        std::string str;
-        std::string key;
-    public:
-        Cube(std::string s) : str(s) {
-            while(str.size() < 8){
-                str.push_back(' ');
-            }
+#include <iostream>
+#include <vector>
+#include <fstream>
+
+const int VertexCube = 8;
+
+class Cube
+{
+private:    
+    std::string str;
+public:
+    Cube(std::string s) : str(s) {
+        while(str.size() < VertexCube){
+            str.push_back(' ');
         }
-        void Right();
-        void Left();
-        void Up();
-        void Down();
-        std::string get_Cube() {return str;}
+    }
+    Cube() = delete;
+    Cube(const Cube&) = delete;
+    Cube& operator=(const Cube&) = delete;
+    void rotate_right();
+    void rotate_left();
+    void rotate_up();
+    void rotate_down();
+    std::string get_cube() const {return str;}
 };
 
-std::string Set_Key(std::string mode){
-    std::string Key;
-    std::vector<std::string> mode_str = Mode_slicer(mode);
-    std::vector<std::string> tmp = mode_str;
-    for (size_t i = 0; i < mode_str.size(); i++)
+namespace Utility 
+{
+    std::vector<std::string> mode_slicer(std::string mode) //need copy
     {
-        for (size_t j = 0, k = 2; j < 3; j++, --k)
+        std::vector<std::string> mode_str(10);
+        for (size_t i = 0, k = 0; i < mode.size();)
         {
-            tmp[i][j] = mode_str[i][k];
-            if(tmp[i][j] == 'U'){tmp[i][j] = 'D';}
-            else if(tmp[i][j] == 'D'){tmp[i][j] = 'U';}
-            else if(tmp[i][j] == 'L'){tmp[i][j] = 'R';}
-            else if(tmp[i][j] == 'R'){tmp[i][j] = 'L';}
-        }
-        if(!mode_str[i].empty())Key += tmp[i];
-    }
-    for (size_t i = 0; i < Key.size(); i++)
-    {
-        if(isalpha(Key[i])){
-            Key.insert(i, 1, ':'); ++i;
-        }       
-    }
-    for (size_t i = 0, j = 0; i < Key.size(); i += 7, j++)
-    {
-        Key.insert(i, 1, ('1' + j));
-    }
-    for (size_t i = 0; i < Key.size(); i++)
-    {
-        if(i > 0 && isdigit(Key[i])){
-            Key.insert(i, 1, ',' ); ++i;
-        }
-    }   
-    return Key;
-}
-
-std::vector<std::string> Mode_slicer(std::string mode){
-    std::vector<std::string> mode_str(10);
-    for (size_t i = 0, k = 0; i < mode.size();)
-    {
-        for (size_t j = 0; j < 3; j++)
-        {
-            if(isalpha(mode[i])){
-                mode_str[k].push_back(mode[i]);
-            } else {
-                --j;
+            for (size_t j = 0; j < 3; j++)
+            {
+                if(isalpha(mode[i])) {
+                    mode_str[k].push_back(mode[i]);
+                } else {
+                    --j;
+                }
+                if(i == mode.size() || i > mode.size()){
+                    break;
+                }
+                ++i;
             }
-            if(i == mode.size() || i > mode.size()){
-                break;
-            }
-            ++i;
+            ++k;
         }
-        ++k;
+        return mode_str;
     }
-    return mode_str;
-}
 
-std::string ENCODE(std::string str, std::string mode){
-    std::vector<std::string> vecstr(10);
-    for (size_t i = 0, k = 0; i < str.size();)
-    {       
-        for (size_t j = 0; j < 8; j++)
-        {
-            vecstr[k].push_back(str[i]);
-            if(i == str.size() || i > str.size()){
-                break;
-            }
-            ++i;
-        }
-        ++k; 
-    }  
-
-    std::vector<std::string> mode_str = Mode_slicer(mode);  
-
-    std::string Encoded_str;
-    for (size_t i = 0; i < vecstr.size(); i++)
+    std::string set_key(std::string mode) //need copy
     {
-        Cube obj(vecstr[i]);
-        for (size_t k = 0; k < 3; k++)
+        std::string Key;
+        std::vector<std::string> mode_str = mode_slicer(mode);
+        std::vector<std::string> tmp = mode_str;
+        for (size_t i = 0; i < mode_str.size(); i++)
         {
-            if(mode_str[i][k] == 'R'){obj.Right();}
-            else if(mode_str[i][k] == 'D'){obj.Down();}
-            else if(mode_str[i][k] == 'U'){obj.Up();}
-            else if(mode_str[i][k] == 'L'){obj.Left();}
-            else{break;}            
-        }        
-        if(!vecstr[i].empty()) Encoded_str += obj.get_Cube();
+            for (size_t j = 0, k = 2; j < 3; j++, --k)
+            {
+                tmp[i][j] = mode_str[i][k];
+                if(tmp[i][j] == 'U'){tmp[i][j] = 'D';}
+                else if(tmp[i][j] == 'D'){tmp[i][j] = 'U';}
+                else if(tmp[i][j] == 'L'){tmp[i][j] = 'R';}
+                else if(tmp[i][j] == 'R'){tmp[i][j] = 'L';}
+            }
+            if (!mode_str[i].empty()) { Key += tmp[i]; }
+        }
+        for (size_t i = 0; i < Key.size(); i++)
+        {
+            if (isalpha(Key[i])) {
+                Key.insert(i, 1, ':'); ++i;
+            }       
+        }
+        for (size_t i = 0, j = 0; i < Key.size(); i += 7, j++)
+        {
+            Key.insert(i, 1, ('1' + j));
+        }
+        for (size_t i = 0; i < Key.size(); i++)
+        {
+            if(i > 0 && isdigit(Key[i])) {
+                Key.insert(i, 1, ',' );
+                ++i;
+            }
+        }   
+        return Key;
     }
-    return Encoded_str;
-}
 
+    std::string encode(std::string str, std::string mode) 
+    {
+        std::vector<std::string> vecstr(10);
+        for (size_t i = 0, k = 0; i < str.size();)
+        {       
+            for (size_t j = 0; j < VertexCube; j++)
+            {
+                vecstr[k].push_back(str[i]);
+                if(i == str.size() || i > str.size()) {
+                    break;
+                }
+                ++i;
+            }
+            ++k; 
+        }  
 
+        std::vector<std::string> mode_str = mode_slicer(mode);  
 
-void Cube::Right(){
-    std::string tmp = "        ";
+        std::string Encoded_str;
+        for (size_t i = 0; i < vecstr.size(); i++)
+        {
+            Cube obj(vecstr[i]);
+            for (size_t k = 0; k < 3; k++)
+            {
+                if(mode_str[i][k] == 'R'){obj.rotate_right();}
+                else if(mode_str[i][k] == 'D'){obj.rotate_down();}
+                else if(mode_str[i][k] == 'U'){obj.rotate_up();}
+                else if(mode_str[i][k] == 'L'){obj.rotate_left();}
+                else{break;}            
+            }        
+            if (!vecstr[i].empty()) { Encoded_str += obj.get_cube(); }
+        }
+        return Encoded_str;
+    } 
+
+} //Utility namespace
+
+void Cube::rotate_right() {
+    std::string tmp (VertexCube, ' ');
     tmp[0] = str[4];
     tmp[1] = str[0];
     tmp[2] = str[6];
@@ -128,8 +140,8 @@ void Cube::Right(){
     str = tmp;
 }
 
-void Cube::Left(){
-    std::string tmp = "        ";
+void Cube::rotate_left() {
+    std::string tmp (VertexCube, ' ');
     tmp[0] = str[1];
     tmp[1] = str[5];
     tmp[2] = str[3];
@@ -141,8 +153,8 @@ void Cube::Left(){
     str = tmp;
 }
 
-void Cube::Up(){
-    std::string tmp = "        ";
+void Cube::rotate_up() {
+    std::string tmp (VertexCube, ' ');
     tmp[0] = str[2];
     tmp[1] = str[3];
     tmp[2] = str[6];
@@ -154,8 +166,8 @@ void Cube::Up(){
     str = tmp;
 }
 
-void Cube::Down(){
-    std::string tmp = "        ";
+void Cube::rotate_down() {
+    std::string tmp (VertexCube, ' ');
     tmp[0] = str[4];
     tmp[1] = str[5];
     tmp[2] = str[0];
@@ -185,12 +197,12 @@ int main(){
             std::string encoder_mode;
             std::getline(std::cin, encoder_mode);
             std::cout<<"Here is the result of encoding:\n";
-            std::cout<<ENCODE(user_sentence, encoder_mode);
+            std::cout<<Utility::encode(user_sentence, encoder_mode);
             std::cout<<"\nHere is the key for decoding your sentence:\n";
-            std::cout<<Set_Key(encoder_mode);
+            std::cout<<Utility::set_key(encoder_mode);
             if(fout.is_open()){
                 fout<<count<<": "<<"User sentence: "<<user_sentence<<"\tEncoded mode: "<<encoder_mode<<std::endl;
-                fout<<"  "<<"Encoded: "<<ENCODE(user_sentence, encoder_mode)<<"\tKey for decoding: "<<Set_Key(encoder_mode)<<std::endl;
+                fout<<"  "<<"Encoded: "<<Utility::encode(user_sentence, encoder_mode)<<"\tKey for decoding: "<<Utility::set_key(encoder_mode)<<std::endl;
             } else {
                 throw std::invalid_argument("Couldn't open the file\n, Bye\n");
                 exit(EXIT_FAILURE);
@@ -211,7 +223,7 @@ int main(){
                 std::string key;
                 std::getline(std::cin, key);
                 std::cout<<"Here is your decoded sentence:\n";
-                std::cout<<ENCODE(sentence_for_decode, key)<<std::endl;
+                std::cout<<Utility::encode(sentence_for_decode, key)<<std::endl;
                 std::cout<<"More sentence for decoding? [yes/no]";
                 std::string yes_no;
                 std::getline(std::cin, yes_no);
